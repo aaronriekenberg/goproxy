@@ -20,8 +20,8 @@ func main() {
 
 	setNumProcs()
 
-	remoteAddr := os.Args[len(os.Args) - 1]
-	localAddrs := os.Args[1:len(os.Args) - 1]
+	remoteAddr := os.Args[len(os.Args)-1]
+	localAddrs := os.Args[1 : len(os.Args)-1]
 	for _, localAddr := range localAddrs {
 		go accept(localAddr, remoteAddr)
 	}
@@ -35,8 +35,8 @@ func setNumProcs() {
 	numCPU := runtime.NumCPU()
 	prevMaxProcs := runtime.GOMAXPROCS(numCPU)
 	logger.Printf(
-          "set GOMAXPROCS = NumCPU = %v, prev GOMAXPROCS = %v",
-          numCPU, prevMaxProcs)
+		"set GOMAXPROCS = NumCPU = %v, prev GOMAXPROCS = %v",
+		numCPU, prevMaxProcs)
 }
 
 func accept(localAddr string, remoteAddr string) {
