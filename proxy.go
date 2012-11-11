@@ -20,9 +20,9 @@ func main() {
 
 	setNumProcs()
 
-	remoteAddr := os.Args[len(os.Args)-1]
-	for i := 1; i < (len(os.Args) - 1); i++ {
-		localAddr := os.Args[i]
+	remoteAddr := os.Args[len(os.Args) - 1]
+	localAddrs := os.Args[1:len(os.Args) - 1]
+	for _, localAddr := range localAddrs {
 		go accept(localAddr, remoteAddr)
 	}
 
