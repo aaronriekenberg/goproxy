@@ -56,7 +56,7 @@ func accept(localAddr string, remoteAddr string) {
 
 func handleClient(clientConnection net.Conn, remoteAddr string) {
 	clientConnectionString := buildClientConnectionString(clientConnection)
-	logger.Printf("accepted %v\n", clientConnectionString)
+	logger.Printf("accept %v\n", clientConnectionString)
 
 	remoteConnection, err := net.Dial("tcp", remoteAddr)
 	if err != nil {
@@ -72,11 +72,11 @@ func handleClient(clientConnection net.Conn, remoteAddr string) {
 }
 
 func proxyConnections(
-	connection1 net.Conn, connection2 net.Conn, connectionString string) {
-	io.Copy(connection1, connection2)
-	connection1.Close()
-	connection2.Close()
-	logger.Printf("closed %v\n", connectionString)
+	from net.Conn, to net.Conn, connectionString string) {
+	defer from.Close()
+	defer to.Close()
+	io.Copy(from, to)
+	logger.Printf("close %v\n", connectionString)
 }
 
 func buildClientConnectionString(clientConnection net.Conn) string {
