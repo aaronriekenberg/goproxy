@@ -72,10 +72,10 @@ func handleClient(clientConnection net.Conn, remoteAddr string) {
 }
 
 func proxyConnections(
-	from net.Conn, to net.Conn, connectionString string) {
-	defer from.Close()
-	defer to.Close()
-	io.Copy(from, to)
+	source net.Conn, dest net.Conn, connectionString string) {
+	defer source.Close()
+	defer dest.Close()
+	io.Copy(dest, source)
 	logger.Printf("close %v\n", connectionString)
 }
 
