@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -41,7 +39,7 @@ func setNumProcs() {
 
 func accept(localAddr string, remoteAddr string) {
 	local, err := net.Listen("tcp", localAddr)
-	logger.Printf("listening on %v\n", localAddr)
+	logger.Print("listening on ", localAddr)
 	if err != nil {
 		logger.Fatal("cannot listen: %v", err)
 	}
@@ -56,11 +54,11 @@ func accept(localAddr string, remoteAddr string) {
 
 func handleClient(clientConnection net.Conn, remoteAddr string) {
 	clientConnectionString := buildClientConnectionString(clientConnection)
-	logger.Printf("accept %v\n", clientConnectionString)
+	logger.Print("accept ", clientConnectionString)
 
 	remoteConnection, err := net.Dial("tcp", remoteAddr)
 	if err != nil {
-		logger.Printf("remote dial failed: %v\n", err)
+		logger.Printf("remote dial failed: %v", err)
 		clientConnection.Close()
 	} else {
 		go proxyConnections(
@@ -76,21 +74,15 @@ func proxyConnections(
 	defer source.Close()
 	defer dest.Close()
 	io.Copy(dest, source)
-	logger.Printf("close %v\n", connectionString)
+	logger.Print("close ", connectionString)
 }
 
 func buildClientConnectionString(clientConnection net.Conn) string {
-	buf := new(bytes.Buffer)
-	fmt.Fprintf(
-		buf, "%v -> %v",
-		clientConnection.RemoteAddr(), clientConnection.LocalAddr())
-	return buf.String()
+	return (clientConnection.RemoteAddr().String() + " -> " +
+		clientConnection.LocalAddr().String())
 }
 
 func buildRemoteConnectionString(remoteConnection net.Conn) string {
-	buf := new(bytes.Buffer)
-	fmt.Fprintf(
-		buf, "%v -> %v",
-		remoteConnection.LocalAddr(), remoteConnection.RemoteAddr())
-	return buf.String()
+	return (remoteConnection.LocalAddr().String() + " -> " +
+		remoteConnection.RemoteAddr().String())
 }
