@@ -16,31 +16,21 @@ type TcpProxy struct {
 	localAddresses []string
 	remoteAddress  string
 	connectTimeout time.Duration
-	numProcs       int
 }
 
 func NewTcpProxy(
 	localAddresses []string, remoteAddress string,
-	connectTimeout time.Duration, numProcs int) *TcpProxy {
+	connectTimeout time.Duration) *TcpProxy {
 	return &TcpProxy{
 		localAddresses: localAddresses,
 		remoteAddress:  remoteAddress,
-		connectTimeout: connectTimeout,
-		numProcs:       numProcs}
+		connectTimeout: connectTimeout}
 }
 
 func (proxy *TcpProxy) Start() {
-	proxy.setNumProcs()
 	for _, localAddress := range proxy.localAddresses {
 		go proxy.accept(localAddress)
 	}
-}
-
-func (proxy *TcpProxy) setNumProcs() {
-	prevMaxProcs := runtime.GOMAXPROCS(proxy.numProcs)
-	logger.Printf(
-		"set GOMAXPROCS = %v, prev GOMAXPROCS = %v",
-		proxy.numProcs, prevMaxProcs)
 }
 
 func (proxy *TcpProxy) accept(localAddr string) {
@@ -100,17 +90,25 @@ func buildRemoteConnectionString(remoteConnection net.Conn) string {
 		remoteConnection.RemoteAddr())
 }
 
+func setNumProcs() {
+	newMaxProcs := runtime.NumCPU()
+	prevMaxProcs := runtime.GOMAXPROCS(newMaxProcs)
+	logger.Printf(
+		"set GOMAXPROCS = %v, prev GOMAXPROCS = %v",
+		newMaxProcs, prevMaxProcs)
+}
+
 func main() {
 	if len(os.Args) < 3 {
 		logger.Fatal("usage: proxy <local> [ <local> ... ] <remote>")
 	}
 
+	setNumProcs()
+
 	remoteAddress := os.Args[len(os.Args)-1]
 	localAddresses := os.Args[1 : len(os.Args)-1]
 
-	proxy := NewTcpProxy(
-		localAddresses, remoteAddress,
-		10*time.Second, runtime.NumCPU())
+	proxy := NewTcpProxy(localAddresses, remoteAddress, 10*time.Second)
 	proxy.Start()
 
 	for {
