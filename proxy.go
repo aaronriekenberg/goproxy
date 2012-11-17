@@ -46,7 +46,7 @@ func accept(localAddr string, remoteAddr string) {
 	local, err := net.Listen("tcp", localAddr)
 	logger.Printf("listening on %v", localAddr)
 	if err != nil {
-		logger.Fatal("cannot listen: %v", err)
+		logger.Fatal("cannot listen: ", err)
 	}
 	for {
 		clientConnection, err := local.Accept()
