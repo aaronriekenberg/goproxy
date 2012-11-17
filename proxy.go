@@ -12,37 +12,38 @@ import (
 
 var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lmicroseconds)
 
-const (
-	connectTimeout = 10 * time.Second
-)
+type TcpProxy struct {
+	localAddresses []string
+	remoteAddress  string
+	connectTimeout time.Duration
+	numProcs       int
+}
 
-func main() {
-	if len(os.Args) < 3 {
-		logger.Fatal("usage: proxy <local> [ <local> ... ] <remote>")
-	}
+func NewTcpProxy(
+	localAddresses []string, remoteAddress string,
+	connectTimeout time.Duration, numProcs int) *TcpProxy {
+	return &TcpProxy{
+		localAddresses: localAddresses,
+		remoteAddress:  remoteAddress,
+		connectTimeout: connectTimeout,
+		numProcs:       numProcs}
+}
 
-	setNumProcs()
-
-	remoteAddr := os.Args[len(os.Args)-1]
-	localAddrs := os.Args[1 : len(os.Args)-1]
-	for _, localAddr := range localAddrs {
-		go accept(localAddr, remoteAddr)
-	}
-
-	for {
-		time.Sleep(10 * time.Second)
+func (proxy *TcpProxy) Start() {
+	proxy.setNumProcs()
+	for _, localAddress := range proxy.localAddresses {
+		go proxy.accept(localAddress)
 	}
 }
 
-func setNumProcs() {
-	numCPU := runtime.NumCPU()
-	prevMaxProcs := runtime.GOMAXPROCS(numCPU)
+func (proxy *TcpProxy) setNumProcs() {
+	prevMaxProcs := runtime.GOMAXPROCS(proxy.numProcs)
 	logger.Printf(
-		"set GOMAXPROCS = NumCPU = %v, prev GOMAXPROCS = %v",
-		numCPU, prevMaxProcs)
+		"set GOMAXPROCS = %v, prev GOMAXPROCS = %v",
+		proxy.numProcs, prevMaxProcs)
 }
 
-func accept(localAddr string, remoteAddr string) {
+func (proxy *TcpProxy) accept(localAddr string) {
 	local, err := net.Listen("tcp", localAddr)
 	logger.Printf("listening on %v", localAddr)
 	if err != nil {
@@ -53,16 +54,17 @@ func accept(localAddr string, remoteAddr string) {
 		if err != nil {
 			logger.Printf("accept failed: %v", err)
 		} else {
-			go handleClient(clientConnection, remoteAddr)
+			go proxy.handleClient(clientConnection)
 		}
 	}
 }
 
-func handleClient(clientConnection net.Conn, remoteAddr string) {
+func (proxy *TcpProxy) handleClient(clientConnection net.Conn) {
 	clientConnectionString := buildClientConnectionString(clientConnection)
 	logger.Printf("accept %v", clientConnectionString)
 
-	remoteConnection, err := net.DialTimeout("tcp", remoteAddr, connectTimeout)
+	remoteConnection, err := net.DialTimeout("tcp",
+		proxy.remoteAddress, proxy.connectTimeout)
 	if err != nil {
 		logger.Printf("remote dial failed: %v", err)
 		clientConnection.Close()
@@ -96,4 +98,22 @@ func buildRemoteConnectionString(remoteConnection net.Conn) string {
 		"%v -> %v",
 		remoteConnection.LocalAddr(),
 		remoteConnection.RemoteAddr())
+}
+
+func main() {
+	if len(os.Args) < 3 {
+		logger.Fatal("usage: proxy <local> [ <local> ... ] <remote>")
+	}
+
+	remoteAddress := os.Args[len(os.Args)-1]
+	localAddresses := os.Args[1 : len(os.Args)-1]
+
+	proxy := NewTcpProxy(
+		localAddresses, remoteAddress,
+		10*time.Second, runtime.NumCPU())
+	proxy.Start()
+
+	for {
+		time.Sleep(10 * time.Second)
+	}
 }
