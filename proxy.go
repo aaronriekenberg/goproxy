@@ -10,10 +10,12 @@ import (
   "time"
 )
 
-var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lmicroseconds)
-
 const (
   netString = "tcp"
+)
+
+var (
+  logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lmicroseconds)
 )
 
 type TcpProxy struct {
