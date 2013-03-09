@@ -12,6 +12,10 @@ import (
 
 var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lmicroseconds)
 
+const (
+  netString = "tcp"
+)
+
 type TcpProxy struct {
   localAddresses []string
   remoteAddress  string
@@ -35,7 +39,7 @@ func (proxy *TcpProxy) Start() {
 }
 
 func (proxy *TcpProxy) accept(localAddr string) {
-  local, err := net.Listen("tcp", localAddr)
+  local, err := net.Listen(netString, localAddr)
   logger.Printf("listening on %v", localAddr)
   if err != nil {
     logger.Fatal("cannot listen: ", err)
@@ -54,7 +58,7 @@ func (proxy *TcpProxy) handleClient(clientConnection net.Conn) {
   clientConnectionString := buildClientConnectionString(clientConnection)
   logger.Printf("accept %v", clientConnectionString)
 
-  remoteConnection, err := net.DialTimeout("tcp",
+  remoteConnection, err := net.DialTimeout(netString,
     proxy.remoteAddress, proxy.connectTimeout)
   if err != nil {
     logger.Printf("remote dial failed: %v", err)
